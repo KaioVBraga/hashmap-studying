@@ -1,76 +1,107 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+
+#define HASH_SIZE 100
 
 typedef struct Node
 {
-    int number;
-    struct Node *address;
+    char *key;
+    char *value;
+    struct Node *next;
 } Node;
-
-void showLinkedList(Node *headPointer)
+typedef struct Hash
 {
-    Node *pointer = headPointer;
+    Node *list[HASH_SIZE];
+} Hash;
 
-    while (pointer)
+unsigned int hashCode(char *key)
+{
+    unsigned long hash = 5381;
+    unsigned int c;
+
+    while (c = *key++)
     {
-        printf("%d \n", pointer->number);
-        pointer = pointer->address;
+        hash = (hash << 5) + hash + c;
     }
+
+    return hash % HASH_SIZE;
 }
 
-Node *invertLinkedList(Node *headPointer)
+Node *createNode(char *key, char *value)
 {
-    Node *pointer = headPointer;
-    Node *next = 0;
-    Node *previous = 0;
+    Node *node = (Node *)malloc(sizeof(Node));
+    node->key = key;
+    node->value = value;
+    return node;
+}
 
-    while (pointer)
+void insertNode(Hash *hash, char *key, char *value)
+{
+    unsigned int index = hashCode(key);
+    Node *node = hash->list[index];
+
+    if (node == NULL)
     {
-        next = pointer->address;
-        pointer->address = previous;
-        previous = pointer;
+        hash->list[index] = createNode(key, value);
+        return;
+    }
 
-        if (!next)
+    while (true)
+    {
+        if (!strcmp(node->key, key))
+        {
+            node->value = value;
+            return;
+        }
+
+        if (node->next == NULL)
         {
             break;
         }
 
-        pointer = next;
+        node = node->next;
     }
 
-    return pointer;
+    node->next = createNode(key, value);
+}
+
+char *search(Hash *hash, char *key)
+{
+    unsigned int index = hashCode(key);
+    Node *node = hash->list[index];
+
+    while (node)
+    {
+        if (!strcmp(node->key, key))
+        {
+            return node->value;
+        }
+    }
+
+    return "";
 }
 
 int main()
 {
-    Node head = {number : 1};
-    Node node1 = {number : 2};
-    Node node2 = {number : 3};
-    Node node3 = {number : 3};
-    Node tail = {number : 100};
-    Node *newHead = 0;
+    Hash *hash = (Hash *)malloc(sizeof(Hash));
 
-    head.address = &node1;
-    node1.address = &node2;
-    node2.address = &node3;
-    node3.address = &tail;
+    insertNode(hash, "hello", "world");
+    insertNode(hash, "Kaio", "Viycius");
+    insertNode(hash, "bob", "marley");
 
-    showLinkedList(&head);
+    printf("%s\n", search(hash, "hello"));
+    printf("%s\n", search(hash, "Kaio"));
+    printf("%s\n", search(hash, "bob"));
+    printf("%s\n", search(hash, "marley"));
+    printf("%s\n", search(hash, "bob"));
 
-    printf("\n");
-
-    newHead = invertLinkedList(&head);
-
-    printf("\n");
-
-    showLinkedList(newHead);
-
-    printf("\n");
-
-    newHead = invertLinkedList(newHead);
-
-    printf("\n");
-
-    showLinkedList(newHead);
+    insertNode(hash, "bob", "dylan");
+    printf("%s\n", search(hash, "bob"));
+    printf("%s\n", search(hash, "bob"));
+    insertNode(hash, "bob", "sponge");
+    printf("%s\n", search(hash, "bob"));
 
     return 0;
 }
